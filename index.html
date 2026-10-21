@@ -1,0 +1,1836 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pendaftaran Ujian Tugas Akhir Prodi Sarjana</title>
+  <meta name="author" content="instagram @gustiwahyu96">
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+
+  <style>
+    body {
+      background: #f7f9fb;
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+
+    .form-section {
+      padding: 2rem;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(26,43,73,0.06);
+      margin: 2rem auto;
+      max-width: 1280px;
+    }
+
+    .required::after {
+      content: " *";
+      color: #d00;
+    }
+
+    .logo {
+      max-width: 100px;
+      margin-bottom: 15px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* wizard step */
+    .wizard-steps {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+    .wizard-step {
+      text-align: center;
+      flex: 1;
+      position: relative;
+    }
+    .wizard-step .circle {
+      width: 35px;
+      height: 35px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #dee2e6;
+      color: #6c757d;
+      font-weight: bold;
+      z-index: 1;
+      position: relative;
+    }
+    .wizard-step.active .circle,
+    .wizard-step.completed .circle {
+      background: #0d6efd;
+      color: #fff;
+    }
+    .wizard-step .label {
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+    }
+    .wizard-step::after {
+      content: "";
+      position: absolute;
+      top: 17px;
+      left: 50%;
+      width: 100%;
+      height: 3px;
+      background: #dee2e6;
+      z-index: 0;
+    }
+    .wizard-step:last-child::after { display: none; }
+    .wizard-step.completed::after { background: #0d6efd; }
+
+    .step {
+      display: none;
+      opacity: 0;
+      transform: translateX(20px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    .step.active {
+      display: block;
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .loading-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(255,255,255,0.8);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+    .loading-overlay.visible {
+      opacity: 1;
+      pointer-events: all;
+    }
+    @keyframes pulse-spinner {
+      0% { transform: scale(0.8); opacity: 0.7; }
+      50% { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(0.8); opacity: 0.7; }
+    }
+    .loading-overlay .spinner-border {
+      width: 3rem; height: 3rem;
+      animation: pulse-spinner 1.5s infinite ease-in-out;
+    }
+    .loading-overlay p {
+      margin-top: 20px;
+      font-size: 1.2em;
+      color: #004085;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    /* Buttons */
+    .btn { transition: all 0.3s ease; border-radius: 5px; border: none; box-shadow: 0 2px 5px rgba(0,64,133,0.2); }
+    .btn-danger { background-color: #004085; background-image: linear-gradient(to right,#0056B3,#004A99); border-color: #004085; }
+    .btn-danger:hover { background-image: linear-gradient(to right,#004A99,#003366); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+    .btn-secondary { background-color: #6c757d; border-color: #6c757d; background-image: linear-gradient(to right,#A0A8AF,#959CA4); box-shadow: 0 2px 5px rgba(108,117,125,0.2); }
+    .btn-secondary:hover { background-image: linear-gradient(to right,#959CA4,#8C949C); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+    .btn-success { background-color: #28a745; background-image: linear-gradient(to right,#4CAF50,#3B9D6E); border-color: #28a745; box-shadow: 0 2px 5px rgba(40,167,69,0.2); }
+    .btn-success:hover { background-image: linear-gradient(to right,#3B9D6E,#2E8B57); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+    .btn-primary { background-color: #007bff; background-image: linear-gradient(to right,#1E90FF,#0F88FF); border-color: #007bff; box-shadow: 0 2px 5px rgba(0,123,255,0.2); }
+    .btn-primary:hover { background-image: linear-gradient(to right,#0F88FF,#007FFF); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+    .btn-warning { background-color: #ffc107; background-image: linear-gradient(to right,#ffca2c,#ffb700); border-color: #ffc107; box-shadow: 0 2px 5px rgba(255,193,7,0.2); color: #000; }
+    .btn-warning:hover { background-image: linear-gradient(to right,#ffb700,#ff9800); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+
+    .input-group-icon .form-control { border-top-left-radius: 0.375rem; border-bottom-left-radius: 0.375rem; }
+    .input-group-icon .input-group-text { border-top-right-radius: 0.375rem; border-bottom-right-radius: 0.375rem; background-color: #e9ecef; border-color: #ced4da; }
+    .form-control:focus, .form-select:focus { border-color: #004085; box-shadow: 0 0 0 0.25rem rgba(0,64,133,0.25); }
+
+    .file-drop-area {
+      border: 2px dashed #a0a0a0;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      background-color: #f5f5f5;
+    }
+    .file-drop-area:hover, .file-drop-area.drag-over {
+      background-color: #e0f0ff;
+      border-color: #004085;
+      box-shadow: 0 0 0 0.25rem rgba(0,64,133,0.25);
+    }
+    .file-drop-area input[type="file"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10; }
+    .file-drop-area .file-icon { font-size: 3em; color: #555; margin-bottom: 10px; transition: transform 0.3s ease; }
+    .file-drop-area:hover .file-icon { transform: translateY(-5px); }
+    .file-drop-area .file-name { display: block; margin-top: 10px; font-weight: bold; color: #343a40; word-break: break-all; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .file-drop-area .file-placeholder { color: #6c757d; font-size: 0.9em; }
+    .file-drop-area .file-info { font-size: 0.8em; color: #888; margin-top: 5px; }
+    .file-drop-area .file-success-icon { color: #28a745; font-size: 1.2em; margin-left: 5px; }
+    .file-error-message { color: #dc3545; font-size: 0.85em; margin-top: 5px; margin-bottom: 0; text-align: left; }
+
+    .alert-info { color: #0c5460; background-color: #d1ecf1; border-color: #bee5eb; }
+    .alert-info .alert-heading { color: #063d47; }
+
+    #pendaftaranForm input::placeholder,
+    #pendaftaranForm textarea::placeholder,
+    #pendaftaranForm select::placeholder { color: #6c757d !important; opacity: 1 !important; font-style: normal !important; }
+
+    .progress { height: 10px; margin-bottom: 1.5rem; }
+    .progress-bar { transition: width 0.5s ease; }
+
+    /* ── Judul Card UI ── */
+    .judul-card-box {
+      background: linear-gradient(135deg,#f8fbff 0%,#eef5ff 100%);
+      border: 1px solid #d6e4ff;
+      border-radius: 16px;
+      padding: 1rem;
+      box-shadow: 0 8px 24px rgba(13,110,253,0.08);
+    }
+    .judul-card-option {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      text-align: left;
+      padding: 1rem 1.1rem;
+      border: 1.5px solid #d8e2f1;
+      background: #fff;
+      border-radius: 14px;
+      transition: all 0.25s ease;
+      cursor: pointer;
+      box-shadow: 0 3px 10px rgba(15,23,42,0.04);
+      min-height: 92px;
+    }
+    .judul-card-option:hover {
+      border-color: #0d6efd;
+      background: #f4f8ff;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 22px rgba(13,110,253,0.12);
+    }
+    .judul-card-option.active-yes {
+      border-color: #198754;
+      background: linear-gradient(135deg,#eaf8ef 0%,#f4fff7 100%);
+      box-shadow: 0 10px 22px rgba(25,135,84,0.14);
+    }
+    .judul-card-option.active-no {
+      border-color: #0d6efd;
+      background: linear-gradient(135deg,#e8f1ff 0%,#f5f9ff 100%);
+      box-shadow: 0 10px 22px rgba(13,110,253,0.14);
+    }
+    .judul-card-icon {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+      color: #fff;
+    }
+    .judul-icon-yes { background: linear-gradient(135deg,#28a745,#1e7e34); }
+    .judul-icon-no  { background: linear-gradient(135deg,#0d6efd,#084298); }
+    .judul-card-content { flex: 1; }
+    .judul-card-title { font-weight: 700; font-size: 0.98rem; color: #1f2a37; margin-bottom: 0.25rem; }
+    .judul-card-text  { font-size: 0.85rem; color: #6b7280; line-height: 1.35; }
+
+    #judulTextareaWrapper {
+      overflow: hidden;
+      max-height: 0;
+      opacity: 0;
+      transition: max-height 0.4s ease, opacity 0.35s ease, margin-top 0.3s ease;
+      margin-top: 0;
+    }
+    #judulTextareaWrapper.show {
+      max-height: 720px;
+      opacity: 1;
+      margin-top: 0.75rem;
+    }
+    #judulInput.auto-filled {
+      background-color: #f0fff4 !important;
+      border-color: #28a745 !important;
+      color: #155724 !important;
+    }
+
+    /* Nama auto-filled style */
+    #namaInput.auto-filled {
+      background-color: #f0fff4 !important;
+      border-color: #28a745 !important;
+      color: #155724 !important;
+    }
+
+        /* Generic auto-filled style for other fields (dosen, konsentrasi, semester, tahun_akademik) */
+    .sp-autofilled {
+      background-color: #f0fff4 !important;
+      border-color: #28a745 !important;
+    }
+        #dosenInput[readonly] {
+      background-color: #f0fff4 !important;
+      border-color: #28a745 !important;
+      cursor: not-allowed;
+    }
+    #tahunAkademikInput[readonly] {
+      background-color: #f0fff4 !important;
+      border-color: #28a745 !important;
+      cursor: not-allowed;
+    }
+    .sp-select-locked {
+      pointer-events: none;
+      background-color: #f0fff4 !important;
+      border-color: #28a745 !important;
+      cursor: not-allowed;
+      background-image: none;
+    }
+
+    .nama-badge {
+      margin-top: 6px;
+      font-size: 0.85rem;
+    }
+
+    /* Info banner untuk auto-fill seminar proposal */
+    .sp-info-banner {
+      background: linear-gradient(135deg,#eaf8ef 0%,#f4fff7 100%);
+      border: 1px solid #b9e7c7;
+      border-radius: 10px;
+      padding: 0.7rem 1rem;
+      margin-bottom: 1rem;
+      color: #1e6c3a;
+      font-size: 0.92rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .sp-info-banner i { font-size: 1.15rem; color: #198754; margin-top: 2px; }
+
+    @media (max-width: 576px) {
+      .form-section { padding: 1rem; margin: 1rem auto; }
+      .wizard-step .label { font-size: 0.75rem; }
+      .btn { width: 100%; margin-bottom: 10px; }
+      .logo { max-width: 80px; }
+    }
+  </style>
+</head>
+<body class="bg-light">
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="spinner-border text-danger" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p id="loadingMessage">Memuat...</p>
+  </div>
+
+  <div class="py-4 text-center">
+    <img style="width: 5%;" src="https://hukum.upnvj.ac.id/wp-content/uploads/2025/10/WhatsApp-Image-2025-10-14-at-13.45.20-1.png" class="logo" alt="Logo UPNVJ">
+    <h3 style="font-family: roboto;" class="fw-bold mb-3">Pendaftaran Ujian Tugas Akhir Program Sarjana</h3>
+    <p class="text-muted">Fakultas Hukum Universitas Pembangunan Nasional "Veteran" Jakarta</p>
+  </div>
+
+  <div class="container mb-5">
+    <div class="form-section">
+      <!-- Wizard Steps -->
+      <div class="wizard-steps mb-4">
+        <div class="wizard-step active" id="wizard1">
+          <div class="circle"><i class="bi bi-search"></i></div>
+          <div class="label">Validasi NIM</div>
+        </div>
+        <div class="wizard-step" id="wizard2">
+          <div class="circle"><i class="bi bi-person-lines-fill"></i></div>
+          <div class="label">Data Pendaftaran</div>
+        </div>
+        <div class="wizard-step" id="wizard3">
+          <div class="circle"><i class="bi bi-cloud-upload"></i></div>
+          <div class="label">Upload Berkas</div>
+        </div>
+      </div>
+
+      <!-- Progress Bar -->
+      <div class="mb-4">
+        <div class="progress">
+          <div id="progressBar" class="progress-bar progress-bar-striped bg-info" role="progressbar" style="width: 33%">33% - Validasi NIM</div>
+        </div>
+      </div>
+
+      <!-- STEP 1: Validasi NIM -->
+      <div class="step active" id="step1">
+        <h5 class="mb-3"><i class="bi bi-search me-2"></i>Validasi NIM</h5>
+
+        <div class="alert alert-info" role="alert">
+          <h4 class="alert-heading"><i class="bi bi-info-circle"></i> Informasi Penting</h4>
+          <p class="mb-0">Sebelum melakukan pendaftaran ujian tugas akhir, Anda harus sudah:</p>
+          <ol class="mb-0 mt-2">
+            <li>Melakukan <strong>pengajuan judul dan pembimbing</strong> yang telah <strong>disetujui</strong></li>
+            <li>Mengupload <strong>file Kesediaan Pembimbing</strong> di pada dashboard pengajuan judul</li>
+          </ol>
+          <p class="mb-0 mt-2">Silakan masukkan NIM Anda untuk verifikasi.</p>
+        </div>
+
+        <form id="validasiNIMForm">
+          <div class="mb-3">
+            <label class="form-label fw-bold required"><i class="bi bi-person-badge"></i> Nomor Induk Mahasiswa (NIM)</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-card-list"></i></span>
+              <input type="number" class="form-control" id="nimValidasi" name="nimValidasi" inputmode="numeric" pattern="[0-9]*" placeholder="Masukkan NIM Anda" required />
+            </div>
+            <small class="text-muted">*Masukkan NIM yang telah Anda gunakan saat pengajuan judul</small>
+          </div>
+
+          <div class="text-center">
+            <button type="submit" class="btn btn-danger px-5">
+              <i class="bi bi-search"></i> Verifikasi NIM
+            </button>
+          </div>
+        </form>
+
+        <hr class="my-4" />
+
+        <div class="alert alert-warning" role="alert">
+          <h5 class="alert-heading"><i class="bi bi-exclamation-triangle-fill"></i> Belum Melakukan Pengajuan Judul?</h5>
+          <p class="mb-2">Jika Anda belum melakukan pengajuan judul dan pembimbing tugas akhir, silakan lakukan terlebih dahulu:</p>
+          <a href="https://hukum.upnvj.ac.id/pengajuan-judul-pembimbing-tugas-akhir/" target="_blank" class="btn btn-warning">
+            <i class="bi bi-box-arrow-up-right me-1"></i> Pengajuan Judul &amp; Pembimbing
+          </a>
+        </div>
+      </div>
+
+      <!-- STEP 2: Form Pendaftaran -->
+      <div class="step" id="step2">
+        <h5 class="mb-3"><i class="bi bi-person-lines-fill me-2"></i>Data Pendaftaran</h5>
+
+        <div class="alert alert-success" role="alert">
+          <h4 class="alert-heading"><i class="bi bi-check-circle-fill"></i> Data Terverifikasi</h4>
+          <p class="mb-0">Data pengajuan judul Anda telah disetujui. Silakan lengkapi form pendaftaran ujian di bawah ini.</p>
+        </div>
+
+        <!-- BARU: Banner info autofill dari seminar proposal -->
+        <div id="seminarProposalBanner" class="sp-info-banner" style="display:none;">
+          <i class="bi bi-info-circle-fill"></i>
+          <div>
+            <strong>Data Otomatis dari Seminar Proposal</strong><br>
+            <span class="small">Dosen Pembimbing, Konsentrasi, Semester, dan Tahun Akademik telah diisi otomatis berdasarkan data seminar proposal Anda. Silakan periksa dan ubah jika diperlukan.</span>
+          </div>
+        </div>
+
+        <div class="alert alert-info" role="alert">
+          <h4 class="alert-heading"><i class="bi bi-info-circle"></i> Informasi</h4>
+          <p>Dimohon untuk mahasiswa/i agar memperhatikan kembali persyaratan pendaftaran ujian tugas akhir.
+            <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#requirementsModal">
+              Lihat Persyaratan
+            </button><br>
+            Data yang di input akan langsung dapat di lihat keterangannya pada halaman berikut:
+            <a class="btn btn-primary btn-sm" href="https://hukum.upnvj.ac.id/data-pendaftaran-ujian-tugas-akhir/" role="button" target="_blank">Klik Disini</a>
+          </p>
+        </div>
+
+        <form id="pendaftaranForm">
+          <div class="row g-3">
+            <!-- ── Nama Lengkap ── -->
+            <div class="col-md-6">
+              <label class="form-label fw-bold"><i class="bi bi-person"></i> Nama Lengkap</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-person-circle"></i></span>
+                <input type="text" class="form-control" name="nama" id="namaInput"
+                       placeholder="Nama Lengkap" readonly
+                       style="background-color: #e9ecef;" required />
+              </div>
+              <small class="text-muted" id="namaHelperText"></small>
+              <div id="namaBadge" class="nama-badge" style="display:none;"></div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-bold"><i class="bi bi-person-badge"></i> NIM</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-card-list"></i></span>
+                <input type="number" class="form-control" name="nim" id="nimInput"
+                       inputmode="numeric" pattern="[0-9]*" placeholder="NIM"
+                       readonly style="background-color: #e9ecef;" required />
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Judul Tugas Akhir (Card UI) ── -->
+          <div class="mb-3 mt-3">
+            <label class="form-label fw-bold required"><i class="bi bi-journal-text"></i> Judul Tugas Akhir</label>
+
+            <div class="judul-card-box">
+              <!-- Pilihan Card -->
+              <div id="judulChoiceWrapper">
+                <p class="text-muted small mb-3">
+                  <i class="bi bi-info-circle me-1"></i>
+                  Apakah ada perubahan judul setelah seminar proposal?
+                </p>
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <button type="button" id="btnJudulYa" class="judul-card-option"
+                            onclick="handleJudulChoice('ya')">
+                      <div class="judul-card-icon judul-icon-yes">
+                        <i class="bi bi-pencil-square"></i>
+                      </div>
+                      <div class="judul-card-content">
+                        <div class="judul-card-title">Ya, ada perubahan judul</div>
+                        <div class="judul-card-text">Saya ingin mengisi judul baru dan menjelaskan alasannya.</div>
+                      </div>
+                    </button>
+                  </div>
+                  <div class="col-md-6">
+                    <button type="button" id="btnJudulTidak" class="judul-card-option"
+                            onclick="handleJudulChoice('tidak')">
+                      <div class="judul-card-icon judul-icon-no">
+                        <i class="bi bi-cloud-download"></i>
+                      </div>
+                      <div class="judul-card-content">
+                        <div class="judul-card-title">Tidak, gunakan judul seminar proposal</div>
+                        <div class="judul-card-text">Ambil judul dari data seminar proposal.</div>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Textarea + Alert -->
+              <div id="judulTextareaWrapper">
+                <div id="judulFetchAlert" style="display:none;" class="alert py-2 px-3 mb-2" role="alert"></div>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="bi bi-journal-text"></i></span>
+                  <textarea class="form-control" name="judul" id="judulInput" rows="3"
+                            placeholder="Judul tugas akhir akan muncul di sini..." required></textarea>
+                </div>
+
+                <!-- BARU: Field Alasan Perubahan Judul (hanya muncul jika "Ya") -->
+                <div id="alasanWrapper" style="display:none; margin-top: 0.85rem;">
+                  <label class="form-label fw-semibold small mb-1">
+                    <i class="bi bi-chat-left-text me-1"></i>
+                    Alasan Perubahan Judul <span class="text-danger">*</span>
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-chat-left-text"></i></span>
+                    <textarea class="form-control" name="alasan_perubahan_judul" id="alasanInput" rows="3"
+                              placeholder="Tuliskan alasan terjadinya perubahan judul setelah sidang seminar proposal..."></textarea>
+                  </div>
+                  <small class="text-muted">*Alasan ini akan otomatis dicatat Sebagai Bukti <strong>Kepada Majelis Tugas Akhir</strong> dan akan disampaikan kepada Dosen Pembimbingnya Masing-masing.</small>
+                </div>
+
+                <div class="mt-2 d-flex align-items-center gap-2">
+                  <button type="button" id="btnUbahPilihan"
+                          class="btn btn-sm btn-outline-secondary"
+                          onclick="resetJudulChoice()">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Ubah pilihan
+                  </button>
+                  <span id="judulModeLabel" class="text-muted small"></span>
+                </div>
+              </div>
+            </div>
+            <small class="text-muted">*Masukkan judul tugas akhir sesuai yang telah disetujui</small>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-bold required"><i class="bi bi-person-badge"></i> Dosen Pembimbing</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-person-badge"></i></span>
+              <input type="text" class="form-control" name="dosen" id="dosenInput"
+                     placeholder="Masukkan Nama Dosen Pembimbing" required />
+            </div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-bold required"><i class="bi bi-mortarboard"></i> Konsentrasi</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-mortarboard"></i></span>
+                <select class="form-select" name="konsentrasi" id="konsentrasiSelect" required>
+                  <option value="" disabled selected>Pilih Konsentrasi</option>
+                  <option value="Hukum Pidana">Hukum Pidana</option>
+                  <option value="Hukum Perdata">Hukum Perdata</option>
+                  <option value="HTN/HAN">HTN/HAN</option>
+                  <option value="Hukum Internasional">Hukum Internasional</option>
+                  <option value="Hukum Bisnis">Hukum Bisnis</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold required"><i class="bi bi-calendar3"></i> Semester</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-calendar3"></i></span>
+                <select class="form-select" name="semester" id="semesterSelect" required>
+                  <option value="" disabled selected>Pilih Semester</option>
+                  <option value="Gasal">Gasal</option>
+                  <option value="Genap">Genap</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3 mt-3">
+            <label class="form-label fw-bold required"><i class="bi bi-calendar-check"></i> Tahun Akademik</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-calendar-check"></i></span>
+              <input type="text" class="form-control" name="tahun_akademik" id="tahunAkademikInput" placeholder="Contoh: 2024/2025" required />
+            </div>
+            <small class="text-muted">*Contoh: 2024/2025</small>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-bold required"><i class="bi bi-file-earmark-text"></i> Skema Tugas Akhir</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-file-earmark-text"></i></span>
+              <select class="form-select" name="skema" id="skema" required onchange="toggleSintaField()">
+                <option value="" disabled selected>Pilih Skema Tugas Akhir</option>
+                <option value="Artikel Ilmiah">Artikel Ilmiah</option>
+                <option value="Skripsi">Skripsi</option>
+                <option value="Memorandum Hukum">Memorandum Hukum</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-bold required"><i class="bi bi-calendar-day"></i> Tanggal Pelaksanaan SEMPRO</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-calendar-day"></i></span>
+              <input type="date" class="form-control" name="sempro_date" id="sempro_date" required />
+            </div>
+          </div>
+
+          <div class="mb-3" id="sintaField" style="display: none;">
+            <label class="form-label fw-bold required"><i class="bi bi-star"></i> Sinta</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-star"></i></span>
+              <select class="form-select" name="sinta">
+                <option value="" disabled selected>Pilih Akreditasi</option>
+                <option value="Sinta 1">Sinta 1</option>
+                <option value="Sinta 2">Sinta 2</option>
+                <option value="Sinta 3">Sinta 3</option>
+              </select>
+            </div>
+            <small class="text-muted">*Pilih Akreditasi Sinta 1/2/3</small>
+          </div>
+
+          <div class="d-flex justify-content-between mt-4">
+            <button type="button" id="backToValidasiButton" class="btn btn-secondary px-4">
+              <i class="bi bi-arrow-left-circle me-1"></i> Kembali
+            </button>
+            <button type="submit" class="btn btn-danger px-5">
+              Lanjut ke Upload Berkas <i class="bi bi-arrow-right-circle ms-1"></i>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- STEP 3: Upload Berkas -->
+      <div class="step" id="step3">
+        <h5 class="mb-3"><i class="bi bi-cloud-upload me-2"></i>Upload Berkas Ujian</h5>
+
+        <div class="alert alert-info">
+          <h4 class="alert-heading"><i class="bi bi-info-circle"></i> Petunjuk Upload</h4>
+          <p class="mb-1">Upload <strong>masing-masing berkas</strong> dalam format <strong>PDF</strong>.
+             Sistem akan <strong>otomatis menggabungkan seluruh berkas</strong> (termasuk Naskah &amp; PPT) menjadi satu file Persyaratan Gabungan.</p>
+          <p class="mb-0"><strong>Catatan:</strong> Maksimal <strong>1 MB per file</strong>, kecuali <strong>Lembar Turnitin, Naskah Tugas Akhir &amp; File PPT (5 MB)</strong>.</p>
+        </div>
+
+        <form id="uploadForm" enctype="multipart/form-data">
+          <div id="persyaratanContainer"></div>
+
+          <div class="mb-4 mt-4">
+            <label class="form-label fw-bold required"><i class="bi bi-file-earmark-text"></i> Naskah Ujian Tugas Akhir</label>
+            <div class="file-drop-area" id="naskahDropArea">
+              <i class="bi bi-file-earmark-text file-icon"></i>
+              <span class="file-placeholder">Seret &amp; Lepas file di sini atau Klik untuk memilih</span>
+              <input type="file" id="naskahInput" name="naskah" accept="application/pdf" required />
+              <span class="file-name" id="naskahDisplay"></span>
+              <span class="file-info">Hanya PDF (Max 5 MB)</span>
+            </div>
+          </div>
+
+          <div class="mb-4 mt-4">
+            <label class="form-label fw-bold required"><i class="bi bi-file-earmark-ppt"></i> File PPT/Presentasi</label>
+            <div class="file-drop-area" id="pptDropArea">
+              <i class="bi bi-file-earmark-ppt file-icon"></i>
+              <span class="file-placeholder">Seret &amp; Lepas file di sini atau Klik untuk memilih</span>
+              <input type="file" id="pptInput" name="ppt" accept="application/pdf" required />
+              <span class="file-name" id="pptDisplay"></span>
+              <span class="file-info">Hanya PDF (Max 5 MB)</span>
+            </div>
+          </div>
+
+          <div id="artikelContainer" class="mt-4"></div>
+
+          <div class="d-flex justify-content-between mt-4">
+            <button type="button" id="backButton" class="btn btn-secondary px-4">
+              <i class="bi bi-arrow-left-circle me-1"></i> Kembali
+            </button>
+            <button type="submit" class="btn btn-danger px-5">
+              <i class="bi bi-send-fill me-1"></i> Daftar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal fade" id="requirementsModal" tabindex="-1" aria-labelledby="requirementsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="requirementsModalLabel">Persyaratan Ujian Tugas Akhir</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p><strong>Perhatian!</strong>, berikut adalah rincian persyaratan yang harus di siapkan..</p>
+          <ol>
+            <li>Kartu Monitoring Tugas Akhir</li>
+            <li>Bukti lunas pembayaran biaya kuliah</li>
+            <li>Ijazah Terakhir</li>
+            <li>Scan KTP</li>
+            <li>Kartu Hasil Studi (KHS)</li>
+            <li>Lembar Turnitin Presentase max. 25%<br><b style="color: red;">(Wajib Turnitin dari Fakultas)</b></li>
+            <li>Bukti PKM</li>
+            <li>Sertifikat TOEFL min score 450</li>
+            <li>Laporan Tugas Akhir yang telah disetujui oleh dosen pembimbing</li>
+            <li>Sertifikat Kompetensi/Profesi (BNSP)</li>
+            <li>Sertifikat/SK Akreditasi Sinta <b style="color: red;">(Jika skema Artikel Ilmiah)</b></li>
+            <li>Lembar Persetujuan Artikel <b style="color: red;">(Jika skema Artikel Ilmiah)</b></li>
+            <li>Bukti LOA dari Penerbit Jurnal <b style="color: red;">(Jika skema Artikel Ilmiah)</b></li>
+            <li>Bukti Review Artikel Ilmiah <b style="color: red;">(Jika skema Artikel Ilmiah)</b></li>
+            <li>Bukti Korespondensi dengan Penerbit Jurnal <b style="color: red;">(Jika skema Artikel Ilmiah)</b></li>
+          </ol>
+          <hr>
+          <p class="mb-0"><strong>Perhatian!,</strong> Gabungkan/Merge semua persyaratan dalam <b style="color: red;">satu file PDF SECARA URUT</b></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwChlTHJP97wFmrR9o5JTOVrM8P7COYxHys7vENu4AzlwD88HHVjhEMWP22-zAfCzV_Ig/exec';
+
+    // ── Konfigurasi field upload (urutan = urutan merge PDF) ──
+    const PERSYARATAN_FIELDS = [
+      { id: 'kartumonitoringtugasakhir', label: 'Kartu Monitoring Tugas Akhir' },
+      { id: 'buktilunaspembayaran',      label: 'Bukti Lunas Pembayaran Kuliah' },
+      { id: 'ijazah',                    label: 'Ijazah Terakhir' },
+      { id: 'ktp',                       label: 'Scan KTP' },
+      { id: 'khs',                       label: 'Kartu Hasil Studi (KHS)' },
+      { id: 'lembarturnitin',            label: 'Lembar Turnitin (max 25%)' },
+      { id: 'buktipartisipasipkm',       label: 'Bukti Partisipasi PKM' },
+      { id: 'toefl',                     label: 'Sertifikat TOEFL (min 450)' },
+      { id: 'sertifikat',                label: 'Sertifikat Kompetensi/Profesi (BNSP)' }
+    ];
+
+    // Field khusus skema Artikel Ilmiah
+    const ARTIKEL_FIELDS = [
+      { id: 'sinta_akreditasi',     label: 'Sertifikat/SK Akreditasi Sinta' },
+      { id: 'persetujuanArtikel',   label: 'Lembar Persetujuan Artikel' },
+      { id: 'loaJurnal',            label: 'Bukti LOA dari Penerbit Jurnal' },
+      { id: 'reviewArtikel',        label: 'Bukti Review Artikel Ilmiah' },
+      { id: 'korespondensiJurnal',  label: 'Bukti Korespondensi dengan Penerbit Jurnal' },
+      { id: 'linkArtikel',          label: 'Link Artikel Ilmiah (URL)', type: 'link' }
+    ];
+
+    function buildPersyaratanFields() {
+  const container = document.getElementById('persyaratanContainer');
+  if (!container) return;
+  container.innerHTML = PERSYARATAN_FIELDS.map((f, i) => {
+    const isTurnitin = (f.id === 'lembarturnitin');
+    const maxLabel = isTurnitin ? '5 MB' : '1 MB';
+    return `
+      <div class="mb-3">
+        <label class="form-label fw-bold required">${i + 1}. ${f.label}</label>
+        <div class="file-drop-area">
+          <i class="bi bi-file-earmark-pdf file-icon"></i>
+          <span class="file-placeholder">Seret &amp; Lepas atau Klik untuk memilih PDF</span>
+          <input type="file" id="${f.id}Input" name="${f.id}" accept="application/pdf" required />
+          <span class="file-name" id="${f.id}Display"></span>
+          <span class="file-info">Hanya PDF (Max ${maxLabel})</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+    function buildArtikelFields() {
+      const container = document.getElementById('artikelContainer');
+      if (!container) return;
+      const isArtikel = (pendaftaranData.skema === 'Artikel Ilmiah');
+      if (!isArtikel) { container.innerHTML = ''; return; }
+      const startNo = PERSYARATAN_FIELDS.length + 2;
+      container.innerHTML = `
+      <div class="alert alert-warning mb-3">
+        <h5 class="alert-heading mb-1"><i class="bi bi-journal-bookmark-fill me-1"></i> Berkas Khusus Skema Artikel Ilmiah</h5>
+        <p class="mb-0 small">File PDF berikut akan <strong>ikut digabungkan</strong> ke dalam Persyaratan Gabungan secara urut.</p>
+      </div>
+      ` + ARTIKEL_FIELDS.map((f, i) => {
+        const no = startNo + i;
+        if (f.type === 'link') {
+          return `
+            <div class="mb-3">
+              <label class="form-label fw-bold required">${no}. ${f.label}</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-link-45deg"></i></span>
+                <input type="url" class="form-control" id="${f.id}Input" name="${f.id}"
+                       placeholder="https://contoh.com/artikel-anda" required />
+              </div>
+              <small class="text-muted">*Masukkan URL/link artikel ilmiah yang sudah dipublikasikan</small>
+            </div>
+          `;
+        }
+        return `
+          <div class="mb-3">
+            <label class="form-label fw-bold required">${no}. ${f.label}</label>
+            <div class="file-drop-area">
+              <i class="bi bi-file-earmark-pdf file-icon"></i>
+              <span class="file-placeholder">Seret &amp; Lepas atau Klik untuk memilih PDF</span>
+              <input type="file" id="${f.id}Input" name="${f.id}" accept="application/pdf" required />
+              <span class="file-name" id="${f.id}Display"></span>
+              <span class="file-info">Hanya PDF (Max 1 MB)</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    let pendaftaranData          = {};
+    let currentStep              = 1;
+    let isAngkatan22             = false;
+    let seminarProposalData      = null;  // ← BARU: simpan data seminar proposal
+
+    // ── Judul card state ──────────────────────────────────────
+    let judulMode           = null;   // 'ya' | 'tidak' | 'bypass'
+
+    // ─────────────────────────────────────────────────────────
+    function showLoading(message = "Memuat...") {
+      document.getElementById('loadingMessage').innerText = message;
+      document.getElementById('loadingOverlay').classList.add('visible');
+    }
+    function hideLoading() {
+      document.getElementById('loadingOverlay').classList.remove('visible');
+    }
+    window.showLoading = showLoading;
+    window.hideLoading = hideLoading;
+
+    function updateWizard(step) {
+      document.querySelectorAll('.wizard-step').forEach((w, i) => {
+        w.classList.remove('active', 'completed');
+        if (i + 1 < step)  w.classList.add('completed');
+        if (i + 1 === step) w.classList.add('active');
+      });
+      const bar = document.getElementById('progressBar');
+      if (step === 1) {
+        bar.style.width = "33%"; bar.textContent = "33% - Validasi NIM";
+        bar.classList.remove('bg-success'); bar.classList.add('bg-info');
+      } else if (step === 2) {
+        bar.style.width = "66%"; bar.textContent = "66% - Data Pendaftaran";
+        bar.classList.remove('bg-info'); bar.classList.add('bg-primary');
+      } else {
+        bar.style.width = "100%"; bar.textContent = "100% - Upload Berkas";
+        bar.classList.remove('bg-primary'); bar.classList.add('bg-success');
+      }
+    }
+
+    function showStep(stepNumber) {
+      document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+      document.getElementById(`step${stepNumber}`).classList.add('active');
+      currentStep = stepNumber;
+      updateWizard(stepNumber);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      if (stepNumber === 3) {
+        buildPersyaratanFields();
+        buildArtikelFields();
+        initFileDropAreas();
+        initFileLimits();
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // Nama helpers
+    // ─────────────────────────────────────────────────────────
+    function setNamaEditable(editable) {
+      const namaInput  = document.getElementById('namaInput');
+      const helperText = document.getElementById('namaHelperText');
+      if (editable) {
+        namaInput.removeAttribute('readonly');
+        namaInput.classList.remove('auto-filled');
+        namaInput.style.backgroundColor = '';
+        namaInput.style.borderColor     = '';
+        namaInput.style.color           = '';
+        namaInput.placeholder = 'Masukkan nama lengkap Anda';
+        if (helperText) helperText.textContent = '*Isi nama lengkap sesuai KTP/ijazah';
+      } else {
+        namaInput.setAttribute('readonly', true);
+        namaInput.style.backgroundColor = '';
+        namaInput.placeholder = 'Nama Lengkap';
+        if (helperText) helperText.textContent = '';
+      }
+    }
+
+        // ── BARU: kunci/buka field Dosen Pembimbing ───────────────
+    function setDosenEditable(editable) {
+      const dosenInput = document.getElementById('dosenInput');
+      if (!dosenInput) return;
+      if (editable) {
+        dosenInput.removeAttribute('readonly');
+        dosenInput.classList.remove('sp-autofilled');
+      } else {
+        dosenInput.setAttribute('readonly', true);
+      }
+    }
+
+        // ── BARU: kunci/buka field Konsentrasi (select) ───────────
+    function setKonsentrasiEditable(editable) {
+      const el = document.getElementById('konsentrasiSelect');
+      if (!el) return;
+      if (editable) {
+        el.classList.remove('sp-select-locked', 'sp-autofilled');
+        el.removeAttribute('tabindex');
+      } else {
+        el.classList.add('sp-select-locked');
+        el.setAttribute('tabindex', '-1');
+      }
+    }
+
+    // ── BARU: kunci/buka field Semester (select) ──────────────
+    function setSemesterEditable(editable) {
+      const el = document.getElementById('semesterSelect');
+      if (!el) return;
+      if (editable) {
+        el.classList.remove('sp-select-locked', 'sp-autofilled');
+        el.removeAttribute('tabindex');
+      } else {
+        el.classList.add('sp-select-locked');
+        el.setAttribute('tabindex', '-1');
+      }
+    }
+
+    // ── BARU: kunci/buka field Tahun Akademik (text input) ────
+    function setTahunAkademikEditable(editable) {
+      const el = document.getElementById('tahunAkademikInput');
+      if (!el) return;
+      if (editable) {
+        el.removeAttribute('readonly');
+        el.classList.remove('sp-autofilled');
+      } else {
+        el.setAttribute('readonly', true);
+      }
+    }
+
+    function showNamaBadgeTA(type, html) {
+      const badge = document.getElementById('namaBadge');
+      badge.style.display = 'block';
+      badge.className = `nama-badge text-${type}`;
+      badge.innerHTML = html;
+    }
+
+    function setNamaAutoFilled(nama) {
+      const namaInput = document.getElementById('namaInput');
+      namaInput.value = nama;
+      namaInput.setAttribute('readonly', true);
+      namaInput.classList.add('auto-filled');
+      namaInput.style.backgroundColor = '';
+      namaInput.style.borderColor     = '';
+      namaInput.style.color           = '';
+      showNamaBadgeTA('success',
+        '<i class="bi bi-check-circle-fill me-1"></i>Nama diambil otomatis dari data pengajuan judul.');
+    }
+
+    function setNamaManual() {
+      const namaInput = document.getElementById('namaInput');
+      namaInput.removeAttribute('readonly');
+      namaInput.classList.remove('auto-filled');
+      namaInput.style.backgroundColor = '';
+      namaInput.style.borderColor     = '';
+      namaInput.style.color           = '';
+      namaInput.value       = '';
+      namaInput.placeholder = 'Masukkan nama lengkap Anda';
+      showNamaBadgeTA('warning',
+        '<i class="bi bi-exclamation-triangle-fill me-1"></i>Nama tidak ditemukan di sistem, silakan isi manual.');
+    }
+
+    function clearNamaBadge() {
+      const badge = document.getElementById('namaBadge');
+      if (badge) { badge.style.display = 'none'; badge.innerHTML = ''; }
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // BARU: Auto-fill dari data seminar proposal
+    // ─────────────────────────────────────────────────────────
+            function autoFillFromSeminarProposal() {
+      const banner = document.getElementById('seminarProposalBanner');
+
+      // Bersihkan style autofilled dulu
+      ['dosenInput', 'konsentrasiSelect', 'semesterSelect', 'tahunAkademikInput'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('sp-autofilled');
+      });
+      // BARU: buka kunci semua field dulu, akan dikunci lagi jika ditemukan dari seminar proposal
+      setDosenEditable(true);
+      setKonsentrasiEditable(true);
+      setSemesterEditable(true);
+      setTahunAkademikEditable(true);
+
+      if (!seminarProposalData || !seminarProposalData.found) {
+        if (banner) banner.style.display = 'none';
+        return;
+      }
+
+      let anyFilled = false;
+
+      // Dosen Pembimbing
+      if (seminarProposalData.dosen) {
+        const el = document.getElementById('dosenInput');
+        if (el) {
+          el.value = seminarProposalData.dosen;
+          el.classList.add('sp-autofilled');
+          anyFilled = true;
+          setDosenEditable(false); // BARU: kunci karena sudah otomatis dari seminar proposal
+        }
+      }
+
+      // Konsentrasi (dropdown)
+      if (seminarProposalData.konsentrasi) {
+        const el = document.getElementById('konsentrasiSelect');
+        if (el) {
+          // Hanya set jika opsi valid tersedia
+          const optionExists = Array.from(el.options).some(o => o.value === seminarProposalData.konsentrasi);
+          if (optionExists) {
+            el.value = seminarProposalData.konsentrasi;
+            el.classList.add('sp-autofilled');
+            anyFilled = true;
+            setKonsentrasiEditable(false); // BARU: kunci karena sudah otomatis
+          }
+        }
+      }
+
+      // Semester (dropdown)
+      if (seminarProposalData.semester) {
+        const el = document.getElementById('semesterSelect');
+        if (el) {
+          const optionExists = Array.from(el.options).some(o => o.value === seminarProposalData.semester);
+          if (optionExists) {
+            el.value = seminarProposalData.semester;
+            el.classList.add('sp-autofilled');
+            anyFilled = true;
+            setSemesterEditable(false); // BARU: kunci karena sudah otomatis
+          }
+        }
+      }
+
+      // Tahun Akademik
+      if (seminarProposalData.tahunAkademik) {
+        const el = document.getElementById('tahunAkademikInput');
+        if (el) {
+          el.value = seminarProposalData.tahunAkademik;
+          el.classList.add('sp-autofilled');
+          anyFilled = true;
+          setTahunAkademikEditable(false); // BARU: kunci karena sudah otomatis
+        }
+      }
+
+      if (banner) banner.style.display = anyFilled ? 'flex' : 'none';
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // Judul Card helpers
+    // ─────────────────────────────────────────────────────────
+    function setJudulAlert(type, icon, message) {
+      const el = document.getElementById('judulFetchAlert');
+      el.className   = `alert alert-${type} py-2 px-3 mb-2`;
+      el.innerHTML   = `<i class="${icon} me-1"></i>${message}`;
+      el.style.display = 'block';
+    }
+    function clearJudulAlert() {
+      const el = document.getElementById('judulFetchAlert');
+      el.style.display = 'none';
+      el.innerHTML   = '';
+    }
+    function setJudulModeLabel(type, html) {
+      const lbl = document.getElementById('judulModeLabel');
+      lbl.innerHTML = html;
+    }
+
+    function resetJudulChoice() {
+      judulMode = null;
+
+      const wrapper       = document.getElementById('judulTextareaWrapper');
+      const ta            = document.getElementById('judulInput');
+      const choiceWrapper = document.getElementById('judulChoiceWrapper');
+      const btnYa         = document.getElementById('btnJudulYa');
+      const btnTidak      = document.getElementById('btnJudulTidak');
+      const btnUbah       = document.getElementById('btnUbahPilihan');
+
+      choiceWrapper.style.display = '';
+      btnUbah.style.display       = '';
+      wrapper.classList.remove('show');
+
+      ta.value = '';
+      ta.readOnly = false;
+      ta.classList.remove('auto-filled');
+      ta.placeholder = 'Judul tugas akhir akan muncul di sini...';
+
+      btnYa.classList.remove('active-yes', 'active-no');
+      btnTidak.classList.remove('active-yes', 'active-no');
+
+      clearJudulAlert();
+      document.getElementById('judulModeLabel').innerHTML = '';
+
+      // BARU: Reset field alasan
+      const alasanWrapper = document.getElementById('alasanWrapper');
+      const alasanInput   = document.getElementById('alasanInput');
+      if (alasanWrapper) alasanWrapper.style.display = 'none';
+      if (alasanInput) {
+        alasanInput.value = '';
+        alasanInput.removeAttribute('required');
+      }
+    }
+
+
+    function handleJudulChoice(choice) {
+      judulMode = choice;
+
+      const btnYa    = document.getElementById('btnJudulYa');
+      const btnTidak = document.getElementById('btnJudulTidak');
+      const wrapper  = document.getElementById('judulTextareaWrapper');
+      const ta       = document.getElementById('judulInput');
+      const alasanWrapper = document.getElementById('alasanWrapper');
+      const alasanInput   = document.getElementById('alasanInput');
+
+      btnYa.classList.remove('active-yes', 'active-no');
+      btnTidak.classList.remove('active-yes', 'active-no');
+      clearJudulAlert();
+
+      ta.value    = '';
+      ta.readOnly = false;
+      ta.classList.remove('auto-filled');
+      ta.placeholder = 'Masukkan judul tugas akhir Anda';
+
+      wrapper.classList.add('show');
+
+      if (choice === 'ya') {
+        btnYa.classList.add('active-yes');
+        setJudulAlert('info', 'bi bi-pencil-square',
+          'Silakan isi <strong>judul tugas akhir baru</strong> dan jangan lupa mengisi <strong>alasan perubahan</strong> di bawah.');
+        setJudulModeLabel('', '<span class="text-muted small"><i class="bi bi-pencil-square text-success me-1"></i>Mode aktif: isi judul baru secara manual</span>');
+
+        // BARU: tampilkan field alasan + jadikan required
+        if (alasanWrapper) alasanWrapper.style.display = 'block';
+        if (alasanInput) {
+          alasanInput.setAttribute('required', 'required');
+        }
+
+        setTimeout(() => ta.focus(), 250);
+
+      } else {
+        // 'tidak' → gunakan judul dari SEMINAR PROPOSAL
+        btnTidak.classList.add('active-no');
+        setJudulModeLabel('', '<span class="text-muted small"><i class="bi bi-cloud-download text-primary me-1"></i>Mode aktif: ambil judul dari seminar proposal</span>');
+
+        // BARU: sembunyikan alasan & lepas required
+        if (alasanWrapper) alasanWrapper.style.display = 'none';
+        if (alasanInput) {
+          alasanInput.value = '';
+          alasanInput.removeAttribute('required');
+        }
+
+        const seminarTitle = (seminarProposalData && seminarProposalData.found && seminarProposalData.judul)
+                             ? seminarProposalData.judul : '';
+
+        if (seminarTitle) {
+          ta.value    = seminarTitle;
+          ta.readOnly = true;
+          ta.classList.add('auto-filled');
+          setJudulAlert('success', 'bi bi-check-circle-fill',
+            '<strong>Judul berhasil diambil</strong> dari data seminar proposal.');
+        } else {
+          ta.readOnly = false;
+          ta.classList.remove('auto-filled');
+          ta.placeholder = 'Data seminar proposal tidak ditemukan — silakan isi manual atau pilih "Ya"';
+          setJudulAlert('warning', 'bi bi-exclamation-triangle-fill',
+            'Data seminar proposal tidak ditemukan untuk NIM ini. Silakan isi judul secara manual atau pilih opsi "Ya" jika memang ada perubahan.');
+          setTimeout(() => ta.focus(), 100);
+        }
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // HANDLER SUBMIT VALIDASI NIM
+    // ─────────────────────────────────────────────────────────
+    document.getElementById('validasiNIMForm').addEventListener('submit', async function(event) {
+      event.preventDefault();
+
+      const nim = document.getElementById('nimValidasi').value.trim();
+
+      if (!nim) {
+        Swal.fire({ title: "NIM Kosong", text: "Harap masukkan NIM Anda", icon: "warning" });
+        return;
+      }
+      if (nim.length < 8) {
+        Swal.fire({ title: "NIM Tidak Valid", text: "NIM harus minimal 8 digit angka", icon: "warning" });
+        return;
+      }
+
+      // ── CABANG ANGKATAN 22 ────────────────────────────────
+      const nimPrefix = parseInt(nim.substring(0, 2));
+if (nimPrefix <= 22) {
+        Swal.fire({
+          title: 'Memverifikasi NIM...',
+          html: 'Mohon tunggu, sistem sedang memeriksa NIM <strong>' + nim + '</strong>',
+          allowOutsideClick: false, allowEscapeKey: false,
+          didOpen: () => Swal.showLoading()
+        });
+
+        try {
+          const checkFD = new FormData();
+          checkFD.set("action", "checkNIM");
+          checkFD.set("nim", nim);
+          const checkRes    = await fetch(GAS_URL, { method: "POST", body: checkFD });
+          const checkResult = await checkRes.json();
+
+          if (checkResult.success && checkResult.exists) {
+            Swal.fire({
+              title: "Pendaftaran Ditolak",
+              html: `NIM <strong>${nim}</strong> sudah terdaftar atas nama <strong>${checkResult.data.nama}</strong>.<br><br>
+                     <ul class="text-start"><li>Satu NIM hanya dapat mendaftar satu kali</li><li>Revisi dilakukan melalui halaman dashboard</li></ul>`,
+              icon: "error"
+            });
+            return;
+          }
+
+          isAngkatan22 = true;
+          // BARU: ambil data seminar proposal dari respons (jika tersedia)
+          seminarProposalData = checkResult.seminarProposal || { found: false };
+
+          Swal.fire({
+            title: "Verifikasi Berhasil!",
+            html: `NIM <strong>${nim}</strong> terverifikasi.<br><br>
+                   Silakan lengkapi form pendaftaran ujian.<br>
+                   <small class="text-muted">*(Mahasiswa angkatan 2022 dapat mendaftar langsung)</small>`,
+            icon: "success",
+            confirmButtonText: "Lanjut ke Pendaftaran"
+          }).then(() => {
+            document.getElementById('nimInput').value  = nim;
+document.getElementById('namaInput').value = '';
+document.getElementById('dosenInput').value = '';
+
+if (seminarProposalData && seminarProposalData.found && seminarProposalData.nama) {
+  setNamaAutoFilled(seminarProposalData.nama);
+} else {
+  setNamaManual();
+  clearNamaBadge();
+  showNamaBadgeTA('info',
+    '<i class="bi bi-info-circle-fill me-1"></i>Nama tidak ditemukan di seminar proposal, silakan isi manual.');
+  setNamaEditable(true);
+}
+pendaftaranData     = {};
+pendaftaranData.nim = nim;
+
+autoFillFromSeminarProposal();
+
+resetJudulChoice();   // ← card pilihan judul tampil normal
+showStep(2);          // ← TANPA aktivasiJudulBypassManual() lagi
+          });
+
+        } catch (error) {
+          Swal.fire({ title: "Error", text: "Terjadi kesalahan: " + error.message, icon: "error" });
+        }
+        return;
+      }
+
+      // ── ALUR NORMAL ───────────────────────────────────────
+      isAngkatan22 = false;
+
+      Swal.fire({
+        title: 'Memverifikasi NIM...',
+        html: 'Mohon tunggu, sistem sedang memeriksa NIM <strong>' + nim + '</strong>',
+        allowOutsideClick: false, allowEscapeKey: false,
+        didOpen: () => Swal.showLoading()
+      });
+
+      try {
+        const formData = new FormData();
+        formData.set("action", "checkNIMPengajuan");
+        formData.set("nim", nim);
+
+        const response = await fetch(GAS_URL, { method: "POST", body: formData });
+        const result   = await response.json();
+
+        if (!result.success) {
+          Swal.fire({ title: "Error", text: result.error || "Terjadi kesalahan saat verifikasi", icon: "error" });
+          return;
+        }
+
+        if (result.notFound) {
+          Swal.fire({
+            title: "NIM Tidak Ditemukan",
+            html: `NIM <strong>${nim}</strong> tidak ditemukan dalam data pengajuan judul.<br><br>
+                   <ul class="text-start"><li>Silakan lakukan pengajuan judul terlebih dahulu</li></ul>`,
+            icon: "warning",
+            showCancelButton: true, cancelButtonText: "Ke Pengajuan Judul",
+            cancelButtonColor: '#ffc107'
+          }).then((r) => {
+            if (r.isDismissed)
+              window.open('https://hukum.upnvj.ac.id/pengajuan-judul-pembimbing-tugas-akhir/', '_blank');
+          });
+          return;
+        }
+
+        if (!result.approved) {
+          Swal.fire({
+            title: "Pengajuan Belum Disetujui",
+            html: `Status: <strong>${result.status}</strong><br><br>
+                   <ul class="text-start"><li>Harap tunggu hingga status disetujui</li></ul>`,
+            icon: "info"
+          });
+          return;
+        }
+
+        if (result.needsUploadKesediaan) {
+          Swal.fire({
+            title: "Upload Kesediaan Pembimbing Diperlukan",
+            html: `Hai <strong>${result.data.nama}</strong>!<br><br>
+                   Status: <strong>${result.data.status}</strong><br>
+                   <p class="text-danger"><strong>Belum upload file Kesediaan Pembimbing.</strong></p>
+                   <ol class="text-start"><li>Buka Dashboard Pengajuan Judul</li><li>Upload Kesediaan Pembimbing</li></ol>`,
+            icon: "warning",
+            showCancelButton: true, cancelButtonText: "Ke Halaman Dashboard",
+            cancelButtonColor: '#ffc107'
+          }).then((r) => {
+            if (r.isDismissed)
+              window.open('https://hukum.upnvj.ac.id/dashboard-pengajuan-judul-pembimbing-tugas-akhir/', '_blank');
+          });
+          return;
+        }
+
+        // Cek duplikasi pendaftaran ujian
+        const checkFD2 = new FormData();
+        checkFD2.set("action", "checkNIM");
+        checkFD2.set("nim", nim);
+        const checkRes2    = await fetch(GAS_URL, { method: "POST", body: checkFD2 });
+        const checkResult2 = await checkRes2.json();
+
+        if (checkResult2.success && checkResult2.exists) {
+          Swal.fire({
+            title: "Pendaftaran Ditolak",
+            html: `NIM <strong>${nim}</strong> sudah terdaftar atas nama <strong>${checkResult2.data.nama}</strong>.<br><br>
+                   <ul class="text-start"><li>Satu NIM hanya dapat mendaftar satu kali</li></ul>`,
+            icon: "error"
+          });
+          return;
+        }
+
+        // ── Simpan data dari server untuk digunakan di Step 2 ──
+        const namaFromServer  = result.data.nama  || '';
+        const dosenFromServer = result.data.dosenPembimbing || '';
+
+        // BARU: ambil data seminar proposal dari respons
+        seminarProposalData = result.seminarProposal || { found: false };
+
+        // Judul untuk preview di SweetAlert: prioritaskan seminar proposal, fallback ke pengajuan
+        const judulPreview = (seminarProposalData.found && seminarProposalData.judul)
+                             ? seminarProposalData.judul
+                             : (result.data.judul || '');
+        const judulSourceLabel = (seminarProposalData.found && seminarProposalData.judul)
+                                 ? 'Judul seminar proposal'
+                                 : 'Judul disetujui (pengajuan)';
+
+        // ── Semua validasi lolos → tampilkan SweetAlert sukses ──
+        Swal.fire({
+          title: "Verifikasi Berhasil!",
+          html: `Selamat datang, <strong>${namaFromServer}</strong>!<br><br>
+                 Data pengajuan judul telah disetujui.<br>
+                 <p class="text-success"><i class="bi bi-check-circle-fill"></i> File Kesediaan Pembimbing telah diupload</p>
+                 ${judulPreview ? `<hr><small>${judulSourceLabel}: <em>${judulPreview}</em></small>` : ''}`,
+          icon: "success",
+          confirmButtonText: "Lanjut ke Pendaftaran"
+        }).then(() => {
+          document.getElementById('nimInput').value = nim;
+
+          if (namaFromServer) {
+            setNamaAutoFilled(namaFromServer);
+          } else {
+            setNamaManual();
+            setNamaEditable(true);
+          }
+
+          // BARU: auto-fill dari seminar proposal
+          autoFillFromSeminarProposal();
+
+          // Fallback: jika seminar proposal tidak ada dosen, gunakan dosen dari pengajuan
+          if ((!seminarProposalData.found || !seminarProposalData.dosen) && dosenFromServer) {
+            document.getElementById('dosenInput').value = dosenFromServer;
+          }
+
+          pendaftaranData      = {};
+          pendaftaranData.nama = namaFromServer;
+          pendaftaranData.nim  = nim;
+
+          resetJudulChoice();
+          showStep(2);
+        });
+
+      } catch (error) {
+        Swal.fire({ title: "Error", text: "Terjadi kesalahan: " + error.message, icon: "error" });
+      }
+    });
+
+    // Tombol kembali ke validasi
+        document.getElementById('backToValidasiButton').addEventListener('click', function() {
+      Swal.fire({
+        title: "Kembali ke Validasi?",
+        text: "Data yang sudah Anda isi akan hilang",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "Ya, Kembali",
+        cancelButtonText: "Batal"
+      }).then((result) => {
+                if (result.isConfirmed) {
+          document.getElementById('pendaftaranForm').reset();
+          document.getElementById('validasiNIMForm').reset();
+          setNamaEditable(false);
+          setDosenEditable(true);        // BARU: buka kunci dosen saat reset
+          setKonsentrasiEditable(true);  // BARU: buka kunci konsentrasi saat reset
+          setSemesterEditable(true);     // BARU: buka kunci semester saat reset
+          setTahunAkademikEditable(true);// BARU: buka kunci tahun akademik saat reset
+          clearNamaBadge();
+          isAngkatan22 = false;
+          seminarProposalData = null;
+          const banner = document.getElementById('seminarProposalBanner');
+          if (banner) banner.style.display = 'none';
+          resetJudulChoice();
+          showStep(1);
+        }
+      });
+    });
+
+    function toggleSintaField() {
+      const skema      = document.getElementById("skema").value;
+      const sintaField = document.getElementById("sintaField");
+      const sintaSelect = document.querySelector('select[name="sinta"]');
+      if (skema === "Artikel Ilmiah") {
+        sintaField.style.display = "block";
+        if (sintaSelect) sintaSelect.setAttribute('required', 'required');
+      } else {
+        sintaField.style.display = "none";
+        if (sintaSelect) { sintaSelect.value = ""; sintaSelect.removeAttribute('required'); }
+      }
+    }
+    window.toggleSintaField = toggleSintaField;
+
+    document.getElementById('pendaftaranForm').addEventListener('submit', async function(event) {
+  event.preventDefault();
+
+  // ── Validasi: judul wajib diisi ──────────────────────────
+  const judulVal = document.getElementById('judulInput').value.trim();
+  if (!judulVal) {
+    Swal.fire({
+      title : "Judul Belum Diisi",
+      text  : "Silakan pilih opsi dan isi judul tugas akhir terlebih dahulu.",
+      icon  : "warning"
+    });
+    document.getElementById('judulInput').focus();
+    return;
+  }
+
+  if (!judulMode) {
+    Swal.fire({
+      title : "Pilihan Judul Belum Dipilih",
+      text  : "Silakan pilih apakah ada perubahan judul atau tidak.",
+      icon  : "warning"
+    });
+    return;
+  }
+
+  // ── Validasi: jika "ya" → alasan wajib diisi ─────────────
+  if (judulMode === 'ya') {
+    const alasan = (document.getElementById('alasanInput').value || '').trim();
+    if (!alasan) {
+      Swal.fire({
+        title : "Alasan Belum Diisi",
+        text  : "Silakan isi alasan perubahan judul setelah seminar proposal.",
+        icon  : "warning"
+      });
+      document.getElementById('alasanInput').focus();
+      return;
+    }
+  }
+
+  // ── Kumpulkan semua data form ─────────────────────────────
+  const formData = new FormData(event.target);
+  formData.forEach((value, key) => { pendaftaranData[key] = value; });
+
+  // ── Pastikan alasan diset dengan benar ───────────────────
+  pendaftaranData.perubahan_judul = (judulMode === 'ya') ? 'ya' : 'tidak';
+  if (judulMode === 'ya') {
+    // Ambil langsung dari element (pastikan tidak ter-skip saat hidden)
+    pendaftaranData.alasan_perubahan_judul =
+      (document.getElementById('alasanInput').value || '').trim();
+  } else {
+    pendaftaranData.alasan_perubahan_judul = '';
+  }
+
+  // ── Validasi tanggal SEMPRO ───────────────────────────────
+  const semproDateStr = pendaftaranData["sempro_date"];
+  if (semproDateStr) {
+    const semproDate = new Date(semproDateStr);
+    const today      = new Date();
+    semproDate.setHours(0,0,0,0);
+    today.setHours(0,0,0,0);
+
+    if (semproDate.getTime() > today.getTime()) {
+      Swal.fire({ title: "Perhatian!", text: "Tidak bisa memilih tanggal sesudah hari ini.", icon: "warning" });
+      return;
+    }
+    const diffDays = (today.getTime() - semproDate.getTime()) / (1000 * 3600 * 24);
+    if (diffDays < 30) {
+      Swal.fire({ title: "Perhatian!", text: "Rentang waktu antara Seminar Proposal dan pendaftaran Ujian TA harus lebih 30 hari.", icon: "warning" });
+      return;
+    }
+  }
+
+  showStep(3);
+});
+
+    document.getElementById('backButton').addEventListener('click', function() {
+      showStep(2);
+    });
+
+    // ─────────────────────────────────────────────────────────
+    // File upload helpers
+    // ─────────────────────────────────────────────────────────
+    async function convertFileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload  = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function mergePDFs(fileList) {
+      const { PDFDocument } = PDFLib;
+      const merged = await PDFDocument.create();
+      for (const f of fileList) {
+        if (!f) continue;
+        try {
+          const buf   = await f.arrayBuffer();
+          const pdf   = await PDFDocument.load(buf, { ignoreEncryption: true });
+          const pages = await merged.copyPages(pdf, pdf.getPageIndices());
+          pages.forEach(p => merged.addPage(p));
+        } catch (e) {
+          throw new Error(`Gagal membaca "${f.name}": ${e.message}`);
+        }
+      }
+      const bytes = await merged.save();
+      return new Blob([bytes], { type: 'application/pdf' });
+    }
+
+    async function uploadSingleFile(file, fieldName, folderName, idx, total) {
+      const base64 = await convertFileToBase64(file);
+      const fd = new FormData();
+      fd.set('action',       'uploadFile');
+      fd.set('folderName',   folderName);
+      fd.set('field',        fieldName);
+      fd.set('file',         base64);
+      fd.set('nama',         pendaftaranData.nama || '');
+      fd.set('nim',          pendaftaranData.nim  || '');
+      fd.set('originalName', file.name);
+
+      const pct = Math.round((idx / total) * 100);
+      const colorClass = pct > 75 ? 'bg-success' : pct > 50 ? 'bg-info' : pct > 25 ? 'bg-warning' : 'bg-danger';
+      Swal.update({
+        title: `Mengunggah Berkas (${idx}/${total})`,
+        html: `<strong>${fieldName}</strong> sedang diunggah.
+               <div class="progress" style="height:25px;margin-top:15px;">
+                 <div class="progress-bar progress-bar-striped progress-bar-animated ${colorClass}" style="width:${pct}%;">${pct}%</div>
+               </div>`
+      });
+
+      const res = await fetch(GAS_URL, { method: 'POST', body: fd });
+      const j   = await res.json();
+      if (!j.success) throw new Error(`Upload ${fieldName} gagal: ${j.error}`);
+      return j.link;
+    }
+
+    function getFileIcon(fileName) {
+      const ext = (fileName.split('.').pop() || '').toLowerCase();
+      switch (ext) {
+        case 'pdf':  return 'bi bi-file-earmark-pdf';
+        case 'doc': case 'docx': return 'bi bi-file-earmark-word';
+        case 'jpg': case 'jpeg': case 'png': return 'bi bi-file-image';
+        case 'ppt': case 'pptx': return 'bi bi-file-earmark-ppt';
+        default: return 'bi bi-file-earmark';
+      }
+    }
+
+    function validateFileType(file, acceptAttribute) {
+      if (!acceptAttribute) return true;
+      const acceptedTypes  = acceptAttribute.split(',').map(t => t.trim().toLowerCase());
+      const fileType       = file.type.toLowerCase();
+      const fileExtension  = file.name.toLowerCase().split('.').pop();
+      for (const at of acceptedTypes) {
+        if (at === fileType) return true;
+        if (at.endsWith('/*') && fileType.startsWith(at.slice(0,-1))) return true;
+        if (at.startsWith('.') && fileExtension === at.slice(1)) return true;
+      }
+      return false;
+    }
+
+    function clearFileErrorMessages() {
+      document.querySelectorAll('.file-error-message').forEach(el => el.remove());
+    }
+
+    function initFileDropAreas() {
+      document.querySelectorAll('.file-drop-area').forEach(dropArea => {
+        const fileInput      = dropArea.querySelector('input[type="file"]');
+        const fileNameDisplay = dropArea.querySelector('.file-name');
+        const filePlaceholder = dropArea.querySelector('.file-placeholder');
+
+        const updateFileDisplay = (file) => {
+          if (file) {
+            fileNameDisplay.innerHTML = `<i class="${getFileIcon(file.name)}"></i> ${file.name} <i class="bi bi-check-circle-fill file-success-icon"></i>`;
+            if (filePlaceholder) filePlaceholder.style.display = 'none';
+          } else {
+            if (fileNameDisplay)  fileNameDisplay.innerHTML = '';
+            if (filePlaceholder) filePlaceholder.style.display = 'block';
+          }
+        };
+
+        try { updateFileDisplay(fileInput.files[0]); } catch(e){}
+
+        ['dragenter','dragover','dragleave','drop'].forEach(ev =>
+          dropArea.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); }));
+        ['dragenter','dragover'].forEach(ev =>
+          dropArea.addEventListener(ev, () => dropArea.classList.add('drag-over')));
+        ['dragleave','drop'].forEach(ev =>
+          dropArea.addEventListener(ev, () => dropArea.classList.remove('drag-over')));
+
+        dropArea.addEventListener('drop', function(e) {
+          fileInput.files = e.dataTransfer.files;
+          fileInput.dispatchEvent(new Event('change'));
+        });
+
+        fileInput.addEventListener('change', function() {
+          const parentDiv     = this.closest('.mb-4') || this.closest('.mb-3');
+          const existingError = parentDiv ? parentDiv.querySelector(`.file-error-message[data-input-id="${this.id}"]`) : null;
+          if (existingError) existingError.remove();
+          updateFileDisplay(this.files[0]);
+        });
+      });
+    }
+
+    function initFileLimits() {
+      const isArtikel = (pendaftaranData.skema === 'Artikel Ilmiah');
+      const allFields = isArtikel ? [...PERSYARATAN_FIELDS, ...ARTIKEL_FIELDS] : PERSYARATAN_FIELDS;
+      const fileFields = allFields.filter(f => f.type !== 'link');
+      const allInputs = [...fileFields.map(f => f.id + 'Input'), 'naskahInput', 'pptInput'];
+      const LARGE_INPUTS = new Set(['naskahInput', 'pptInput', 'lembarturnitinInput']);
+
+      allInputs.forEach(inputId => {
+        const inp = document.getElementById(inputId);
+        if (!inp || inp.dataset.limitBound === '1') return;
+        inp.dataset.limitBound = '1';
+
+        const maxSize  = LARGE_INPUTS.has(inputId) ? 5 * 1024 * 1024 : 1 * 1024 * 1024;
+        const maxLabel = (maxSize / 1024 / 1024).toFixed(0);
+
+        inp.addEventListener('change', function() {
+          const file = this.files[0];
+          if (!file) return;
+
+          if (!validateFileType(file, this.getAttribute('accept'))) {
+            Swal.fire({ icon: 'error', title: 'Tipe File Tidak Sesuai',
+              text: `File "${file.name}" formatnya tidak sesuai.` });
+            this.value = '';
+            const dr = this.closest('.file-drop-area');
+            if (dr) {
+              dr.querySelector('.file-name').textContent = '';
+              dr.querySelector('.file-placeholder').style.display = 'block';
+            }
+            return;
+          }
+          if (file.size > maxSize) {
+            Swal.fire({ icon: 'error', title: 'Ukuran File Terlalu Besar',
+              text: `File "${file.name}" melebihi ${maxLabel} MB.` });
+            this.value = '';
+            const dr = this.closest('.file-drop-area');
+            if (dr) {
+              dr.querySelector('.file-name').textContent = '';
+              dr.querySelector('.file-placeholder').style.display = 'block';
+            }
+          }
+        });
+      });
+    }
+
+    document.getElementById('uploadForm').addEventListener('submit', async function(event) {
+      event.preventDefault();
+      clearFileErrorMessages();
+
+      const isArtikel = (pendaftaranData.skema === 'Artikel Ilmiah');
+      const missing = [];
+      const filesToMerge           = [];
+      const filesToUploadIndividual = [];
+
+      PERSYARATAN_FIELDS.forEach(f => {
+        const inp = document.getElementById(f.id + 'Input');
+        if (!inp || inp.files.length === 0) { missing.push(f.label); return; }
+        const obj = { file: inp.files[0], field: f.id };
+        filesToMerge.push(obj);
+        filesToUploadIndividual.push(obj);
+      });
+
+      const naskahInput = document.getElementById('naskahInput');
+      if (!naskahInput.files.length) {
+        missing.push('Naskah Tugas Akhir');
+      } else {
+        const naskahObj = { file: naskahInput.files[0], field: 'naskah' };
+        filesToMerge.push(naskahObj);
+        filesToUploadIndividual.push(naskahObj);
+      }
+
+      const pptInput = document.getElementById('pptInput');
+      if (!pptInput.files.length) {
+        missing.push('File PPT/Presentasi');
+      } else {
+        const pptObj = { file: pptInput.files[0], field: 'ppt' };
+        filesToMerge.push(pptObj);
+        filesToUploadIndividual.push(pptObj);
+      }
+
+      const linkValues = {};
+      if (isArtikel) {
+        ARTIKEL_FIELDS.forEach(f => {
+          const inp = document.getElementById(f.id + 'Input');
+          if (!inp) { missing.push(f.label); return; }
+          if (f.type === 'link') {
+            const v = (inp.value || '').trim();
+            if (!v) missing.push(f.label);
+            else    linkValues[f.id] = v;
+          } else {
+            if (!inp.files.length) { missing.push(f.label); return; }
+            const artObj = { file: inp.files[0], field: f.id };
+            filesToMerge.push(artObj);
+            filesToUploadIndividual.push(artObj);
+          }
+        });
+      }
+
+      if (missing.length > 0) {
+        return Swal.fire({
+          title: 'Berkas Belum Lengkap',
+          html: '<ul style="text-align:left;">' + missing.map(m => `<li>${m}</li>`).join('') + '</ul>',
+          icon: 'warning'
+        });
+      }
+
+      const { isConfirmed } = await Swal.fire({
+        title: 'Konfirmasi Upload',
+        text: 'Sistem akan menggabungkan seluruh berkas (termasuk Naskah & PPT jika PDF) menjadi 1 PDF, lalu mengunggah semua berkas. Lanjutkan?',
+        icon: 'question', showCancelButton: true, confirmButtonText: 'Ya, Upload!'
+      });
+      if (!isConfirmed) return;
+
+      Swal.fire({
+        title: 'Menggabungkan PDF...',
+        html: 'Mohon tunggu...',
+        allowOutsideClick: false, showConfirmButton: false,
+        didOpen: () => Swal.showLoading()
+      });
+
+      let mergedFile;
+      try {
+        const blob = await mergePDFs(filesToMerge.map(x => x.file));
+        mergedFile = new File([blob],
+          `${pendaftaranData.nim}_persyaratan_gabungan.pdf`,
+          { type: 'application/pdf' }
+        );
+      } catch (err) {
+        return Swal.fire('Gagal Merge PDF', err.message, 'error');
+      }
+
+      const folderName = `${pendaftaranData.nama} - ${pendaftaranData.nim}`;
+      const finalFD    = new FormData();
+
+      const totalFiles = 1 + filesToUploadIndividual.length;
+      let counter = 0;
+
+      try {
+        counter++;
+        finalFD.set('persyaratanGabungan',
+          await uploadSingleFile(mergedFile, 'persyaratanGabungan', folderName, counter, totalFiles));
+
+        for (const item of filesToUploadIndividual) {
+          counter++;
+          finalFD.set(item.field,
+            await uploadSingleFile(item.file, item.field, folderName, counter, totalFiles));
+        }
+
+        Object.entries(linkValues).forEach(([k, v]) => finalFD.set(k, v));
+
+        if (!isArtikel) {
+          ARTIKEL_FIELDS.forEach(f => finalFD.set(f.id, '-'));
+        }
+
+        Swal.update({
+          title: 'Menyimpan Data Pendaftaran...',
+          html: `Hampir selesai!
+                 <div class="progress" style="height:25px;margin-top:15px;">
+                   <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" style="width:100%;">100%</div>
+                 </div>`
+        });
+
+        Object.entries(pendaftaranData).forEach(([k, v]) => finalFD.set(k, v));
+        finalFD.set('folderName', folderName);
+        finalFD.set('action',     'submitForm');
+
+        const res    = await fetch(GAS_URL, { method: 'POST', body: finalFD });
+        const result = await res.json();
+        Swal.close();
+
+        if (!result.success) throw new Error(result.error || 'Gagal menyimpan data');
+
+        await Swal.fire('Berhasil',
+          `Pendaftaran berhasil. Cek progress: <a href="https://hukum.upnvj.ac.id/data-pendaftaran-ujian-tugas-akhir/" target="_blank" class="btn btn-danger btn-sm">Klik Disini</a>`,
+          'success');
+
+                // Reset form
+        document.getElementById('uploadForm').reset();
+        document.getElementById('pendaftaranForm').reset();
+        document.getElementById('validasiNIMForm').reset();
+        document.getElementById('sintaField').style.display = 'none';
+        document.getElementById('artikelContainer').innerHTML = '';
+        setNamaEditable(false);
+        setDosenEditable(true);        // BARU: buka kunci dosen setelah reset
+        setKonsentrasiEditable(true);  // BARU: buka kunci konsentrasi setelah reset
+        setSemesterEditable(true);     // BARU: buka kunci semester setelah reset
+        setTahunAkademikEditable(true);// BARU: buka kunci tahun akademik setelah reset
+        clearNamaBadge();
+        isAngkatan22 = false;
+        seminarProposalData = null;
+        const banner = document.getElementById('seminarProposalBanner');
+        if (banner) banner.style.display = 'none';
+        pendaftaranData = {};
+        resetJudulChoice();
+        showStep(1);
+
+      } catch (err) {
+        Swal.fire('Gagal', err.message, 'error');
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+      updateWizard(1);
+      if (typeof checkRegistrationStatus !== 'function') {
+        window.checkRegistrationStatus = function() {
+          const lo = document.getElementById('loadingOverlay');
+          if (lo) lo.classList.remove('visible');
+        };
+      }
+      checkRegistrationStatus();
+    });
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
